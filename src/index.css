@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/*
+ * Design System Tokens
+ * Source of truth: design_system.md
+ */
+@theme {
+  /* Colors - Surface & Neutral */
+  --color-bg-page: #FFFFFF;
+  --color-bg-subtle: #EEEEEE;
+  --color-border-default: #EEEEEE;
+  --color-border-emphasis: #727272;
+  --color-text-primary: #191919;
+  --color-text-secondary: #727272;
+  --color-icon-default: #727272;
+
+  /* Colors - Brand & Interaction */
+  --color-link-default: #0020E5;
+  --color-link-visited: #800080;
+  --color-logo-purple: #800080;
+
+  /* Radius */
+  --radius-input: 4px;
+  --radius-card: 8px;
+  --radius-button: 8px;
+  --radius-chip: 16px;
+
+  /* Motion */
+  --duration-fast: 100ms;
+  --duration-default: 200ms;
+  --ease-primary: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-secondary: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+ * Typography: Open Sans for body/H3, Times New Roman for H1/H2
+ * Loaded via Google Fonts in index.html
+ */
+@layer base {
+  body {
+    font-family: 'Open Sans', sans-serif;
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-page);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2 {
+    font-family: 'Times New Roman', Times, serif;
+  }
+
+  h3 {
+    font-family: 'Open Sans', sans-serif;
+  }
+}
