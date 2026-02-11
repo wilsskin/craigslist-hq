@@ -38,8 +38,8 @@ export function HomePage() {
       className="min-h-screen"
       style={{ backgroundColor: 'var(--color-bg-page)' }}
     >
-      {/* Centered max-width container per design system */}
-      <div className="mx-auto w-full max-w-6xl px-6">
+      {/* Full-width container, left-aligned content per design system */}
+      <div className="w-full px-6">
         {/* Header spans full container width */}
         <HeaderShell
           selectedCities={selectedCities}

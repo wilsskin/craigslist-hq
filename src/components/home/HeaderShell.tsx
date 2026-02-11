@@ -41,7 +41,7 @@ export function HeaderShell({
       className="w-full border-b"
       style={{ borderColor: 'var(--color-border-default)' }}
     >
-      <div className="flex items-center justify-between py-4 px-6 gap-6">
+      <div className="flex items-center justify-between py-4 gap-6">
         {/* Logo area */}
         <div className="shrink-0" data-testid="header-logo-area">
           <span
