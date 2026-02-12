@@ -92,3 +92,61 @@ describe('computeHeaderLocationLabel', () => {
     expect(result).toBe('Boston ± 25 mi')
   })
 })
+
+// ── Sprint 6 regression: locked formatting rules ─────────────────────
+
+describe('Sprint 6 — overflow fallback format', () => {
+  /**
+   * Use a narrow measure function that forces overflow for any multi-city join.
+   * Forces anything > 100px to overflow.
+   */
+  const narrowMeasure: MeasureTextFn = (text: string) => text.length * 10
+
+  it('overflow forces fallback: Boston first, 3 cities => "Boston, 2 more"', () => {
+    // "Boston, San Francisco, New York City" = 37 chars * 10 = 370px >> 200px
+    const result = computeHeaderLocationLabel(
+      [boston, sf, nyc],
+      10,
+      false,
+      200,
+      narrowMeasure,
+    )
+    expect(result).toBe('Boston, 2 more')
+  })
+
+  it('overflow plus edited radius => "Boston, 2 more ± 20 mi"', () => {
+    const result = computeHeaderLocationLabel(
+      [boston, sf, nyc],
+      20,
+      true,
+      200,
+      narrowMeasure,
+    )
+    expect(result).toBe('Boston, 2 more ± 20 mi')
+  })
+
+  it('no suffix by default: hasEditedRadius false, radius 10 => no "±"', () => {
+    const result = computeHeaderLocationLabel(
+      [boston],
+      10,
+      false,
+      240,
+      mockMeasure,
+    )
+    expect(result).toBe('Boston')
+    expect(result).not.toContain('±')
+  })
+
+  it('selection order preserved in non-overflow join', () => {
+    // "Boston, San Francisco, New York City" = 37 chars * 8 = 296px
+    // With a wide enough maxWidth it fits
+    const result = computeHeaderLocationLabel(
+      [boston, sf, nyc],
+      10,
+      false,
+      400,
+      mockMeasure,
+    )
+    expect(result).toBe('Boston, San Francisco, New York City')
+  })
+})

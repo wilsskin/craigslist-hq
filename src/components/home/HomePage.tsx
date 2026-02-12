@@ -1,13 +1,22 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import type { City } from '@/data/types'
+import type { MeasureTextFn } from '@/lib/locationLabel'
 import { DEFAULT_RADIUS_MILES } from '@/data/constants'
+import { taxonomySections } from '@/data/taxonomy'
+import { filterSectionsByQuery, normalizeQuery } from '@/lib/searchTaxonomy'
 import { HeaderShell } from './HeaderShell'
 import { LeftRailShell } from './LeftRailShell'
 import { MainContentShell } from './MainContentShell'
+import { LocationModal } from '@/components/location/LocationModal'
+
+interface HomePageProps {
+  /** Optional measureText override for deterministic label overflow testing. */
+  measureTextOverride?: MeasureTextFn
+}
 
 /**
  * HomePage owns all page-level state.
- * Sprint 1 defaults per sprint spec:
+ * Defaults per spec:
  *   selectedCities: []
  *   radiusMiles: 10
  *   hasEditedRadius: false
@@ -15,23 +24,24 @@ import { MainContentShell } from './MainContentShell'
  *   headerSearchQuery: ""
  *   modalCityQuery: ""
  */
-export function HomePage() {
-  const [selectedCities, _setSelectedCities] = useState<City[]>([])
-  const [radiusMiles, _setRadiusMiles] = useState<number>(DEFAULT_RADIUS_MILES)
-  const [hasEditedRadius, _setHasEditedRadius] = useState<boolean>(false)
+export function HomePage({ measureTextOverride }: HomePageProps = {}) {
+  const [selectedCities, setSelectedCities] = useState<City[]>([])
+  const [radiusMiles, setRadiusMiles] = useState<number>(DEFAULT_RADIUS_MILES)
+  const [hasEditedRadius, setHasEditedRadius] = useState<boolean>(false)
   const [isLocationModalOpen, setIsLocationModalOpen] =
     useState<boolean>(false)
   const [headerSearchQuery, setHeaderSearchQuery] = useState<string>('')
-  // modalCityQuery state — wired for later sprints
   const [modalCityQuery, setModalCityQuery] = useState<string>('')
 
-  // Suppress unused-variable warnings for state setters wired in later sprints.
-  // These are intentionally declared now so the state model is complete.
-  void _setSelectedCities
-  void _setRadiusMiles
-  void _setHasEditedRadius
-  void setModalCityQuery
-  void modalCityQuery
+  // Compute filtered sections from the search query
+  const { filteredSections, matchCount } = useMemo(
+    () => filterSectionsByQuery(taxonomySections, headerSearchQuery),
+    [headerSearchQuery],
+  )
+
+  const isSearchActive = normalizeQuery(headerSearchQuery) !== ''
+
+  const clearSearch = () => setHeaderSearchQuery('')
 
   return (
     <div
@@ -48,50 +58,36 @@ export function HomePage() {
           headerSearchQuery={headerSearchQuery}
           onSearchQueryChange={setHeaderSearchQuery}
           onLocationTriggerClick={() => setIsLocationModalOpen(true)}
+          measureTextOverride={measureTextOverride}
         />
 
         {/* Below header: two-column layout */}
         <div className="flex" style={{ gap: '0px' }}>
           {/* Left rail: fixed width 240px */}
-          <LeftRailShell />
+          <LeftRailShell isSearchActive={isSearchActive} />
 
           {/* Main content: fills remaining width */}
-          <MainContentShell />
+          <MainContentShell
+            sections={filteredSections}
+            matchCount={matchCount}
+            onClearSearch={clearSearch}
+          />
         </div>
       </div>
 
-      {/*
-        Location modal placeholder — no UI in Sprint 1.
-        Only the state flag (isLocationModalOpen) is wired above.
-        Later sprints will render the modal here.
-      */}
-      {isLocationModalOpen && (
-        <div
-          data-testid="location-modal-placeholder"
-          className="fixed inset-0 flex items-center justify-center z-50"
-          style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
-        >
-          <div
-            className="bg-white p-6 shadow-lg"
-            style={{ borderRadius: 'var(--radius-card)' }}
-          >
-            <p className="text-sm mb-4" style={{ color: 'var(--color-text-secondary)' }}>
-              Location modal placeholder — Sprint 2+
-            </p>
-            <button
-              onClick={() => setIsLocationModalOpen(false)}
-              className="px-4 py-2 text-sm text-white cursor-pointer"
-              style={{
-                backgroundColor: 'var(--color-link-default)',
-                borderRadius: 'var(--radius-button)',
-                border: 'none',
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Location modal — fully controlled from HomePage state */}
+      <LocationModal
+        open={isLocationModalOpen}
+        onOpenChange={setIsLocationModalOpen}
+        selectedCities={selectedCities}
+        setSelectedCities={setSelectedCities}
+        radiusMiles={radiusMiles}
+        setRadiusMiles={setRadiusMiles}
+        hasEditedRadius={hasEditedRadius}
+        setHasEditedRadius={setHasEditedRadius}
+        modalCityQuery={modalCityQuery}
+        setModalCityQuery={setModalCityQuery}
+      />
     </div>
   )
 }

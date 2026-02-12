@@ -1,7 +1,11 @@
 Craigslist Redesign Homepage Prototype
 Implementation and Architecture Spec for Cursor
 
-Purpose
+Goal
+
+A single-page prototype that recreates the Craigslist homepage with a modern visual hierarchy and multi-city location selection. The app preserves Craigslist taxonomy and density while improving scanability and structure. It is optimized for speed and clarity, not feature completeness. No backend, no routing, no network calls.
+
+Purpose (original)
 
 Build a single page prototype that recreates the Craigslist homepage with a modern visual hierarchy and a multi city location selection flow. The design must preserve Craigslist taxonomy and density while improving scanability and structure. This prototype is optimized for speed and clarity, not completeness.
 
@@ -9,6 +13,35 @@ Primary focus areas
 
 1. Location selection, including multi city selection, chips, radius, and header summary behavior
 2. Homepage hierarchy, including header layout, left rail, and McMaster style category sections
+
+Application structure
+
+- Single route: one page (HomePage). No router.
+- State: All page-level state lives in HomePage and is passed down as props. No global store, no duplicated state.
+- Layout: Full-width container (24px horizontal padding) wrapping HeaderShell, then a two-column row (LeftRailShell 240px fixed, MainContentShell flex-1). LocationModal is portaled and controlled by HomePage.
+- Data flow: craigslist_taxonomy.json → src/data/taxonomy.ts (validation, exports taxonomySections, leftRailCategories). Cities and radius options from src/data/constants.ts. HomePage owns selectedCities, radiusMiles, hasEditedRadius, isLocationModalOpen, headerSearchQuery, modalCityQuery.
+- Key components:
+  - HomePage: state owner, composes HeaderShell, LeftRailShell, MainContentShell, LocationModal; computes filteredSections/matchCount via filterSectionsByQuery(headerSearchQuery) and passes measureTextOverride when provided (e.g. tests).
+  - HeaderShell: logo image, search input (with clear X when non-empty), location trigger (computed label via computeHeaderLocationLabel). Optional measureTextOverride for tests.
+  - LeftRailShell: Post an ad (primary), Event calendar (secondary), Categories list (scroll-to-section; disabled when search active with hint).
+  - MainContentShell: "Results: N" when searching, empty state when zero matches, grid of TaxonomySectionBlock per section.
+  - LocationModal (shadcn Dialog): city search, city list, chips, radius select + Reset, Apply; right panel map placeholder.
+- Pure logic (testable, no React): lib/locationLabel.ts (computeHeaderLocationLabel, createCanvasMeasureText), lib/searchTaxonomy.ts (normalizeQuery, itemMatchesQuery, filterSectionsByQuery).
+- Assets: Logo is src/assets/craigslist-logo.png (imported in HeaderShell, height 32px, width auto).
+
+Key decisions (implementation)
+
+1. One page only: no routing, no backend, no API calls. All behavior is client-side and synchronous.
+2. Taxonomy is read-only: craigslist_taxonomy.json is the single source of truth; imported and validated at runtime, never mutated.
+3. State in HomePage only: selectedCities, radiusMiles, hasEditedRadius, isLocationModalOpen, headerSearchQuery, modalCityQuery. Child components are presentational or receive callbacks; no internal state for domain data.
+4. Location label: Real text measurement (canvas) in production for overflow; measureText is injectable so tests can force overflow and assert fallback format without canvas.
+5. Radius suffix: Shown only when hasEditedRadius is true (user edited radius in modal). Default radius 10 is not shown. Reset clears both value and flag.
+6. Search: Client-side only; filters taxonomy by item.label (case-insensitive substring). Empty query shows full taxonomy; non-empty hides sections with no matches and shows result count or empty state. Clearing search does not affect location state.
+7. Left rail during search: Category buttons disabled with hint "Clear search to browse categories" to avoid scroll-to-missing-section edge cases.
+8. Design system: design_system.md is authoritative for tokens (colors, radius, typography). Header search input uses radius.input (4px); buttons, cards, modal use 8px; chips 16px. Icons from lucide-react.
+9. Chips and selection order: Selected cities rendered in selection order; header overflow fallback is "{firstCity}, {n} more".
+10. Logo: Header uses image asset (craigslist-logo.png) from src/assets; no text placeholder.
+11. Testing: Vitest and React Testing Library; unit tests for lib/locationLabel and lib/searchTaxonomy; integration tests on HomePage for modal, search filtering, left rail disable, header label overflow (via measureTextOverride). No backend or E2E.
 
 Source of truth
 
@@ -31,7 +64,7 @@ In scope
 1. One page only, the homepage
 2. Header with three regions
 3. Location modal with suggested list, selected chips, radius selector, map placeholder, Apply close behavior
-4. Selected locations chips row visible on the homepage
+4. Selected locations chips row visible on the homepage (not yet implemented; chips currently only inside modal)
 5. Left rail with Create post button, Event calendar block, and Categories list
 6. Main content sections rendered from the taxonomy JSON with McMaster style headings and subcategory card grids
 
@@ -54,7 +87,7 @@ Page layout contract
 
 Global container
 
-1. Use the design system page container and max width rules.
+1. Full width layout, left aligned content, with 24px horizontal padding on desktop (px-6). No centered max width container.
 2. All spacing uses the design system spacing scale.
 3. The left rail plus main content area sits below the header.
 
@@ -65,7 +98,7 @@ Header has one primary row, plus a secondary row for selected location chips.
 Header primary row regions
 
 1. Left region
-   a. Craigslist logo and identity
+   a. Craigslist logo: image from src/assets/craigslist-logo.png (height 32px, width auto). Same spacing as prior text logo; data-testid="header-logo-area".
 
 2. Center region
    a. A center container that holds
@@ -76,10 +109,10 @@ Header primary row regions
 
 3. Right region
    a. Three icon actions, equal visual weight
-      i. Create post icon button
-      ii. Favorites icon button
-      iii. Account icon button
-   b. Icon only, no labels.
+      i. Create post icon button (SquarePen, 20px)
+      ii. Favorites icon button (Heart, 20px)
+      iii. Account icon button (User, 20px)
+   b. Icon only, no labels. Color icon.default (#727272). Purely presentational (console.log on click).
 
 Header secondary row
 
@@ -96,31 +129,40 @@ Header location trigger
 
 Header location label formatting
 
+Implemented in lib/locationLabel.ts as computeHeaderLocationLabel.
+
 Inputs
 
-1. selectedCities array of city display names
+1. selectedCities array of City objects (id and name)
 2. radiusMiles number
+3. hasEditedRadius boolean, controls whether the radius suffix appears
+4. maxWidthPx number (240 from the header), used for measurement based overflow
+5. measureText function injected as a dependency so tests stay deterministic
 
 Rules
 
-1. Use comma and space to join city names for 1 or 2 cities.
-2. For 3 cities, show the first city name, then a space, then a vertical bar, then a space, then the count of remaining cities, then a space, then more.
-3. If a radius is set, append a space, then plus or minus, then a space, then the radius value, then a space, then mi.
-4. No dot separators.
+1. If selectedCities is empty, return "Select location".
+2. Join all city names with comma and space.
+3. If the measured label width exceeds maxWidthPx, use the overflow fallback: first city name, comma, space, then the count of remaining cities, then space, then "more".
+4. Radius suffix only appears when hasEditedRadius is true. Format: space, then the plus minus symbol, then space, then the radius value, then space, then "mi".
+5. No dot separators.
 
 Examples
 
-1. San Francisco
-2. San Francisco, Boston
-3. San Francisco | 2 more
-4. San Francisco, Boston + or - 8 mi
-5. San Francisco | 2 more + or - 8 mi
+1. Select location (empty selection)
+2. San Francisco
+3. San Francisco, Boston
+4. San Francisco, 2 more (overflow fallback)
+5. San Francisco, Boston ± 10 mi (radius edited)
+6. San Francisco, 2 more ± 20 mi (overflow plus radius)
 
 Search input behavior
 
-1. Search input supports typing only.
-2. No routing and no results page.
-3. Optional: show a toast on submit that says Search submitted, prototype only.
+1. Search input filters taxonomy content in real time via headerSearchQuery state.
+2. When headerSearchQuery is non-empty, a trailing clear button (lucide X icon, 18px) appears inside the input. Clicking it clears the query and restores the full taxonomy view.
+3. Matching rule: case-insensitive substring match against item.label only. Query is trimmed before matching.
+4. No routing and no results page. Filtering is performed client-side against the taxonomy JSON.
+5. Pure filtering logic lives in lib/searchTaxonomy.ts (normalizeQuery, itemMatchesQuery, filterSectionsByQuery).
 
 Left rail contract
 
@@ -132,31 +174,36 @@ Sizing
 
 Left rail content order
 
-1. Create post button
+1. Post an ad button
    a. Full width within the left rail padding
-   b. Primary button styling from the design system
+   b. Primary button styling from the design system (blue fill, white text, 8px radius)
+   c. Leading SquarePen icon (16px)
 
 2. Event calendar block
-   a. Title text Event calendar
-   b. Calendar visual directly below the title
-   c. Calendar is static and matches the general structure of Craigslist month grid
+   a. Currently implemented as a secondary styled button with a CalendarDays icon and text "event calendar".
+   b. A static month grid calendar visual is a future sprint item.
 
 3. Divider or whitespace
    a. Use either a divider line or spacing per the design system
 
 4. Categories block
    a. Label Categories in a secondary text style per the design system
-   b. Category list with icon then label for each top level section in the taxonomy JSON
-   c. Clicking is not functional in this prototype
+   b. Category list driven by the left_rail_categories array in the taxonomy JSON (not the sections array directly). Each entry uses its own stable id as the React key.
+   c. A runtime coherence check validates that left_rail_categories matches sections by length and section_id references. If the check fails, the left rail falls back to deriving entries from sections.
+   d. Icons next to category labels are a future sprint item. Currently labels only.
+   e. Clicking a category scrolls to the matching section in main content via scrollIntoView with smooth behavior.
+   f. When a search query is active (headerSearchQuery is non-empty after trimming), category buttons are disabled (disabled attribute, aria-disabled, reduced opacity, non-interactive cursor). A helper text "Clear search to browse categories" appears above the list. When the search is cleared, buttons re-enable.
 
 Main content contract
 
 McMaster style section layout
 
-1. Render every top level section from the taxonomy JSON in order.
-2. Each section includes
+1. When headerSearchQuery is empty, render every top level section from the taxonomy JSON in order (full taxonomy view).
+2. When headerSearchQuery is non-empty, render only sections that contain matching items (sections with zero matches are hidden entirely). A "Results: {matchCount}" line appears above the filtered results.
+3. When non-empty query produces zero total matches, show an empty state: heading "No results", subtext "Try a different search.", and a "Clear search" primary button that resets the query.
+4. Each visible section includes
    a. A section heading using the design system heading style
-   b. A grid of subcategory cards for that section items list
+   b. A grid of subcategory cards for that section's (possibly filtered) items list
 
 Subcategory cards
 
@@ -166,7 +213,7 @@ Subcategory cards
 
 Data fixtures
 
-Create a file in the codebase that contains the taxonomy JSON. Use it to render both the left rail categories list and the main content sections.
+The taxonomy JSON lives at the repo root as craigslist_taxonomy.json and must not be modified. It is imported via src/data/taxonomy.ts, which types it, runs a lightweight runtime validation (id uniqueness, shape, left rail coherence), and exports taxonomySections and leftRailCategories for use by components.
 
 City list fixture
 
@@ -189,28 +236,41 @@ Provide these options
 5. 50
 6. 100
 
-Default radius is 8.
+Default radius is 10.
 
 State model
 
-All state is local component state.
+All state is local component state owned by HomePage. No state is duplicated elsewhere.
 
 1. selectedCities
-   a. Default value is an array containing San Francisco only.
-   b. Max length is 3.
-   c. No duplicates.
+   a. Type: array of City objects (id and name).
+   b. Default value is an empty array.
+   c. Max length is 3.
+   d. No duplicates.
 
 2. radiusMiles
-   a. Default value is 8.
+   a. Type: number.
+   b. Default value is 10.
 
-3. locationQuery
-   a. Controls the modal search input.
+3. hasEditedRadius
+   a. Type: boolean.
+   b. Default value is false.
+   c. Controls whether the radius suffix appears in the header location label.
 
-4. searchQuery
-   a. Controls the main search input.
+4. isLocationModalOpen
+   a. Type: boolean.
+   b. Default value is false.
+   c. Controls the location modal open and close state.
 
-5. isLocationModalOpen
-   a. Controls the location modal.
+5. headerSearchQuery
+   a. Type: string.
+   b. Default value is empty string.
+   c. Controls the main search input in the header.
+
+6. modalCityQuery
+   a. Type: string.
+   b. Default value is empty string.
+   c. Controls the search input inside the location modal.
 
 Location modal component spec
 
@@ -218,24 +278,42 @@ Trigger
 
 1. Open when user clicks the header location trigger.
 
-Modal content order
+Modal layout
 
-1. Title Location
-2. Search input
+Two column layout inside the shadcn Dialog (max width 680px, 8px radius).
+
+Left panel (flex 1, 24px padding, border right separator)
+1. Title Location (DialogTitle, Open Sans bold)
+2. City search input
    a. Placeholder Search by city, neighborhood or ZIP code
-   b. Predictive list appears directly under the input, filtered from the three city list
-3. Selected locations label
-   a. Text reads Selected locations
-4. Selected location chips
-   a. Render chips for selectedCities
-   b. Each chip has a visible X remove control
-5. Radius selector
-   a. Dropdown showing the radius options
-6. Map placeholder
-   a. Static image or simple placeholder rectangle
-7. Apply button
-   a. Bottom right
-   b. Closes the modal only
+   b. Leading Search icon (16px), emphasis border, 8px radius
+   c. Wired to modalCityQuery state, filters city list by case insensitive substring
+3. City list
+   a. Shows unselected cities that match the query
+   b. Each row is a button with a leading MapPin icon
+   c. Clicking a row adds the city to selectedCities (appended, preserving order)
+   d. Rows are disabled when max 3 cities are already selected
+   e. When no unselected cities match, shows "No matching cities"
+4. Selected locations label and chips
+   a. Label reads Selected locations (secondary text)
+   b. Chips rendered for each selectedCities entry in selection order
+   c. Each chip has a visible X remove button (lucide X icon, 14px)
+   d. Chip styling uses radius.chip (16px), border color.border.default
+   e. When no cities are selected, shows "No locations selected"
+5. Radius control
+   a. Label reads Radius (secondary text)
+   b. A native select dropdown showing the radius options from RADIUS_OPTIONS
+   c. Changing the value sets radiusMiles and sets hasEditedRadius to true
+   d. A Reset action appears only when hasEditedRadius is true. Clicking Reset sets radiusMiles back to 10 and hasEditedRadius back to false.
+6. Apply button
+   a. Full width primary button at the bottom of the left panel (mt-auto)
+   b. Closes the modal only, does not change state
+
+Right panel (fixed 260px width, subtle background)
+1. Title reads Map preview (secondary text)
+2. A bordered placeholder rectangle (8px radius, white background)
+3. When cities are selected, displays their names stacked with MapPin icons and shows the radius if hasEditedRadius is true
+4. When no cities are selected, shows "No locations selected"
 
 Modal interactions
 
@@ -263,12 +341,14 @@ Apply behavior
 
 Cancel close behavior
 
-1. Clicking the top right close icon closes the modal.
+1. Clicking the top right close icon (shadcn DialogClose) closes the modal.
+2. Escape key and overlay click also close the modal (provided by Radix Dialog).
+3. Cancel does not revert state because all changes apply immediately.
 
 Suggested list behavior
 
 1. Never show cities that are already selected.
-2. If all cities are selected, show an empty state message such as All available cities selected.
+2. If no unselected cities match the current query, show "No matching cities".
 
 Implementation details that avoid common errors
 
@@ -307,7 +387,7 @@ The prototype is done when all items below are true.
 
 1. Homepage renders with header, left rail, and main content.
 2. Main content shows all top level sections and all subcategory cards from taxonomy JSON.
-3. Left rail shows Create post button, Event calendar block, and Categories list with icons.
+3. Left rail shows Create post button, Event calendar block, and Categories list (icons are a future sprint item).
 4. Header center shows search input and location trigger.
 5. Location modal opens and closes.
 6. Selecting a suggested city adds it to selectedCities immediately and updates chips and header label.
@@ -316,10 +396,23 @@ The prototype is done when all items below are true.
 9. Max selected cities is 3 and duplicates are prevented.
 10. No backend and no routing is implemented.
 
-Suggested build order
+Build progress
 
-1. Add taxonomy JSON file and city list fixture.
-2. Build layout skeleton, header, left rail, main content rendering.
-3. Implement location modal with chips, suggested list, radius selector.
-4. Wire state model and header label computation.
-5. Add styling per the design system and polish spacing and hierarchy.
+Sprint 1 (complete): App scaffold, page shell with three layout regions, page level state, computeHeaderLocationLabel utility with unit tests, smoke tests.
+
+Sprint 2 (complete): Real taxonomy driven content in main content (all sections and cards from JSON), left rail categories list from left_rail_categories with coherence fallback, runtime id validation, rendering smoke tests.
+
+Sprint 3 (complete): Header search input with leading Search icon wired to headerSearchQuery state. Left rail Post an ad (SquarePen, primary) and Event calendar (CalendarDays, secondary) buttons with icons. Header action icons replaced with real lucide icons (SquarePen, Heart, User). Location trigger includes MapPin icon. Left rail categories converted to buttons that scroll to matching main content section via scrollIntoView. Section anchors with scroll-margin-top for header clearance. Tests for search input, button rendering, and scroll mapping.
+
+Sprint 4 (complete): Location modal implemented using shadcn Dialog (Radix). Two column layout: left panel with city search, city list, selected chips, radius dropdown with Reset, and Apply button; right panel with map preview placeholder showing selected cities. All state fully controlled from HomePage (no internal modal state). City add and remove flows update selectedCities, chips, and header label immediately. Max 3 cities enforced. Radius editing sets hasEditedRadius true; Reset returns to default 10 and clears the flag. Modal closes via Apply, close icon, overlay click, or Escape. Tests cover modal open/close, city selection order, chip removal, max enforcement, header label updates, and radius suffix behavior.
+
+Sprint 5 (complete): Header search now filters taxonomy content in real time. Pure filtering utilities in lib/searchTaxonomy.ts (normalizeQuery, itemMatchesQuery, filterSectionsByQuery). MainContentShell accepts filtered sections, displays "Results: N" count, and shows an empty state with "No results" and a "Clear search" button when matchCount is 0. HeaderShell shows a trailing X clear button inside the search input when query is non-empty. Left rail category buttons are disabled with a "Clear search to browse categories" hint while search is active; re-enable when cleared. Tests cover filtering logic (unit), section hiding, clear search, empty state, and left rail disable behavior (integration). Location modal behavior unchanged from Sprint 4.
+
+Sprint 6 (complete): Final polish and spec hardening. Header search input radius corrected to 4px (radius.input per design system). HeaderShell and HomePage accept optional measureTextOverride prop for deterministic overflow testing in jsdom. Confirmed all other radii match design system (buttons 8px, cards 8px, chips 16px, modal dialog 8px). Verified computeHeaderLocationLabel implements all locked rules: empty default, selection order join, overflow fallback "{firstCity}, {n} more", radius suffix only when hasEditedRadius true. Verified suffix stability: editing radius sets flag, Reset clears flag and value, clearing search does not affect location state, opening and closing modal without changes does not toggle suffix. Keyboard sanity pass confirmed: Radix Dialog handles focus trapping and Escape close, all buttons reachable via Tab, disabled category buttons skipped by assistive technology. New unit tests for Sprint 6 locked formatting rules (forced overflow, overflow plus suffix, no default suffix, selection order). New integration tests for suffix persistence through search and clear then disappearance after Reset, and header overflow behavior via measureText injection. All 64 tests pass. No TypeScript errors, no ESLint violations, no runtime console errors.
+
+Post–Sprint 6: Header logo replaced with image asset (src/assets/craigslist-logo.png, 32px height, auto width) instead of text placeholder.
+
+Remaining work
+
+1. Add header secondary row for selected location chips (chips currently only inside modal).
+2. Event calendar block: currently a button placeholder; a static month grid calendar is a future item.
