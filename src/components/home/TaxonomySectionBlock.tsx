@@ -31,6 +31,7 @@ export function TaxonomySectionBlock({ section }: TaxonomySectionBlockProps) {
           color: 'var(--color-text-primary)',
           lineHeight: '1.25',
           fontSize: '24px',
+          paddingLeft: '4px',
         }}
       >
         {section.title}
@@ -40,7 +41,7 @@ export function TaxonomySectionBlock({ section }: TaxonomySectionBlockProps) {
         className="grid justify-items-start"
         style={{
           gridTemplateColumns: 'repeat(auto-fit, minmax(72px, max-content))',
-          gap: '24px',
+          gap: '16px 8px', // row-gap column-gap: 16px vertical, 8px horizontal
           maxWidth: '744px',
         }}
       >

@@ -41,10 +41,10 @@ export function SubcategoryCard({ item, sectionId }: SubcategoryCardProps) {
 
   return (
     <div
-      className="flex flex-col items-center w-fit max-w-full cursor-pointer"
+      className="flex flex-col items-center w-full cursor-pointer"
       style={{
         fontFamily: '"Open Sans", sans-serif',
-        maxWidth: CARD_MAX_WIDTH,
+        width: CARD_MAX_WIDTH,
       }}
     >
       {/* 64×64 box containing the 28×28 icon — McMaster-style image container */}
