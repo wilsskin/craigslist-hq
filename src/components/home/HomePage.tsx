@@ -1,6 +1,10 @@
 import { useState, useMemo } from 'react'
 import type { City } from '@/data/types'
 import type { MeasureTextFn } from '@/lib/locationLabel'
+import {
+  computeHeaderLocationLabel,
+  createCanvasMeasureText,
+} from '@/lib/locationLabel'
 import { DEFAULT_RADIUS_MILES } from '@/data/constants'
 import { taxonomySections } from '@/data/taxonomy'
 import { filterSectionsByQuery, normalizeQuery } from '@/lib/searchTaxonomy'
@@ -8,6 +12,8 @@ import { HeaderShell } from './HeaderShell'
 import { LeftRailShell } from './LeftRailShell'
 import { MainContentShell } from './MainContentShell'
 import { LocationModal } from '@/components/location/LocationModal'
+
+const LOCATION_LABEL_MAX_WIDTH = 240
 
 interface HomePageProps {
   /** Optional measureText override for deterministic label overflow testing. */
@@ -25,9 +31,11 @@ interface HomePageProps {
  *   modalCityQuery: ""
  */
 export function HomePage({ measureTextOverride }: HomePageProps = {}) {
-  const [selectedCities, setSelectedCities] = useState<City[]>([])
+  const [selectedCities, setSelectedCities] = useState<City[]>([
+    { id: 'city_boston', name: 'Boston' },
+  ])
   const [radiusMiles, setRadiusMiles] = useState<number>(DEFAULT_RADIUS_MILES)
-  const [hasEditedRadius, setHasEditedRadius] = useState<boolean>(false)
+  const [hasEditedRadius, setHasEditedRadius] = useState<boolean>(true)
   const [isLocationModalOpen, setIsLocationModalOpen] =
     useState<boolean>(false)
   const [headerSearchQuery, setHeaderSearchQuery] = useState<string>('')
@@ -43,28 +51,54 @@ export function HomePage({ measureTextOverride }: HomePageProps = {}) {
 
   const clearSearch = () => setHeaderSearchQuery('')
 
+  function scrollToSection(sectionId: string) {
+    const el = document.getElementById(sectionId)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  // Location label for left rail (and any other consumers); computed once for consistency
+  const canvasMeasureText = useMemo(() => createCanvasMeasureText(), [])
+  const measureText = measureTextOverride ?? canvasMeasureText
+  const locationLabel = useMemo(
+    () =>
+      computeHeaderLocationLabel(
+        selectedCities,
+        radiusMiles,
+        hasEditedRadius,
+        LOCATION_LABEL_MAX_WIDTH,
+        measureText,
+      ),
+    [selectedCities, radiusMiles, hasEditedRadius, measureText],
+  )
+
   return (
     <div
       className="min-h-screen"
       style={{ backgroundColor: 'var(--color-bg-page)' }}
     >
+      {/* Header spans full page width */}
+      <HeaderShell
+        headerSearchQuery={headerSearchQuery}
+        onSearchQueryChange={setHeaderSearchQuery}
+      />
+
       {/* Full-width container, left-aligned content per design system */}
       <div className="w-full px-6">
-        {/* Header spans full container width */}
-        <HeaderShell
-          selectedCities={selectedCities}
-          radiusMiles={radiusMiles}
-          hasEditedRadius={hasEditedRadius}
-          headerSearchQuery={headerSearchQuery}
-          onSearchQueryChange={setHeaderSearchQuery}
-          onLocationTriggerClick={() => setIsLocationModalOpen(true)}
-          measureTextOverride={measureTextOverride}
-        />
-
         {/* Below header: two-column layout */}
         <div className="flex" style={{ gap: '0px' }}>
-          {/* Left rail: fixed width 240px */}
-          <LeftRailShell isSearchActive={isSearchActive} />
+          {/* Left rail: location trigger + categories */}
+          <LeftRailShell
+            locationLabel={locationLabel}
+            onLocationTriggerClick={() => setIsLocationModalOpen(true)}
+            onCategoryClick={(sectionId) => {
+              setHeaderSearchQuery('')
+              setTimeout(() => {
+                scrollToSection(sectionId)
+              }, 0)
+            }}
+          />
 
           {/* Main content: fills remaining width */}
           <MainContentShell

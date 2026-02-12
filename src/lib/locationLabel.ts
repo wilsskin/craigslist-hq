@@ -26,7 +26,7 @@ export function computeHeaderLocationLabel(
   measureText: MeasureTextFn,
 ): string {
   if (selectedCities.length === 0) {
-    return 'Select location'
+    return 'select location'
   }
 
   const radiusSuffix = hasEditedRadius ? ` ± ${radiusMiles} mi` : ''

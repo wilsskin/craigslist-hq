@@ -17,7 +17,7 @@ describe('HomePage smoke test', () => {
   it('renders the default location label when no cities selected', () => {
     render(<HomePage />)
 
-    expect(screen.getByTestId('header-location-trigger')).toHaveTextContent(
+    expect(screen.getByTestId('left-rail-location-button')).toHaveTextContent(
       'Select location',
     )
   })
@@ -91,21 +91,22 @@ describe('Header search input', () => {
   })
 })
 
-describe('Left rail primary action buttons', () => {
-  it('renders a Post an ad button with icon', () => {
+describe('Header and left rail primary actions', () => {
+  it('renders Post an ad button in the header', () => {
     render(<HomePage />)
 
     const btn = screen.getByRole('button', { name: /post an ad/i })
     expect(btn).toBeInTheDocument()
-    expect(screen.getByTestId('post-ad-icon')).toBeInTheDocument()
+    expect(screen.getByTestId('header-post-ad-button')).toBeInTheDocument()
   })
 
-  it('renders an Event calendar button with icon', () => {
+  it('renders Select location button in the left rail', () => {
     render(<HomePage />)
 
-    const btn = screen.getByRole('button', { name: /event calendar/i })
-    expect(btn).toBeInTheDocument()
-    expect(screen.getByTestId('event-calendar-icon')).toBeInTheDocument()
+    expect(screen.getByTestId('left-rail-location-button')).toBeInTheDocument()
+    expect(screen.getByTestId('left-rail-location-button')).toHaveTextContent(
+      'Select location',
+    )
   })
 })
 
@@ -156,7 +157,7 @@ describe('Location modal open and close', () => {
     const user = userEvent.setup()
     render(<HomePage />)
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     expect(screen.getByTestId('location-modal')).toBeInTheDocument()
   })
 
@@ -164,7 +165,7 @@ describe('Location modal open and close', () => {
     const user = userEvent.setup()
     render(<HomePage />)
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     expect(screen.getByTestId('location-modal')).toBeInTheDocument()
 
     await user.click(screen.getByTestId('modal-apply'))
@@ -178,7 +179,7 @@ describe('City selection and chips', () => {
     const user = userEvent.setup()
     render(<HomePage />)
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
 
     // Select Boston first, then San Francisco
     await user.click(screen.getByTestId(`city-option-${CITIES[1].id}`))
@@ -196,7 +197,7 @@ describe('City selection and chips', () => {
     const user = userEvent.setup()
     render(<HomePage />)
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
 
     // Select two cities
     await user.click(screen.getByTestId(`city-option-${CITIES[1].id}`))
@@ -216,7 +217,7 @@ describe('Max city selection enforcement', () => {
     const user = userEvent.setup()
     render(<HomePage />)
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
 
     // Select all three cities
     for (const city of CITIES) {
@@ -236,14 +237,14 @@ describe('Header label updates from modal', () => {
     render(<HomePage />)
 
     // Default label
-    expect(screen.getByTestId('header-location-trigger')).toHaveTextContent('Select location')
+    expect(screen.getByTestId('left-rail-location-button')).toHaveTextContent('Select location')
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     await user.click(screen.getByTestId(`city-option-${CITIES[1].id}`))
     await user.click(screen.getByTestId('modal-apply'))
 
     // Header should now show Boston
-    expect(screen.getByTestId('header-location-trigger')).toHaveTextContent('Boston')
+    expect(screen.getByTestId('left-rail-location-button')).toHaveTextContent('Boston')
   })
 })
 
@@ -252,11 +253,11 @@ describe('Radius suffix behavior', () => {
     const user = userEvent.setup()
     render(<HomePage />)
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     await user.click(screen.getByTestId(`city-option-${CITIES[1].id}`))
     await user.click(screen.getByTestId('modal-apply'))
 
-    const label = screen.getByTestId('header-location-trigger')
+    const label = screen.getByTestId('left-rail-location-button')
     expect(label).toHaveTextContent('Boston')
     expect(label).not.toHaveTextContent('±')
   })
@@ -265,14 +266,14 @@ describe('Radius suffix behavior', () => {
     const user = userEvent.setup()
     render(<HomePage />)
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     await user.click(screen.getByTestId(`city-option-${CITIES[1].id}`))
 
     // Change radius to 20
     await user.selectOptions(screen.getByTestId('radius-select'), '25')
     await user.click(screen.getByTestId('modal-apply'))
 
-    const label = screen.getByTestId('header-location-trigger')
+    const label = screen.getByTestId('left-rail-location-button')
     expect(label).toHaveTextContent('± 25 mi')
   })
 
@@ -280,7 +281,7 @@ describe('Radius suffix behavior', () => {
     const user = userEvent.setup()
     render(<HomePage />)
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     await user.click(screen.getByTestId(`city-option-${CITIES[1].id}`))
 
     // Edit radius
@@ -291,7 +292,7 @@ describe('Radius suffix behavior', () => {
     await user.click(screen.getByTestId('radius-reset'))
     await user.click(screen.getByTestId('modal-apply'))
 
-    const label = screen.getByTestId('header-location-trigger')
+    const label = screen.getByTestId('left-rail-location-button')
     expect(label).not.toHaveTextContent('±')
   })
 })
@@ -448,13 +449,13 @@ describe('Sprint 6 — suffix survives search clear and resets correctly', () =>
     render(<HomePage />)
 
     // 1. Select a city, edit radius to 25, Apply
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     await user.click(screen.getByTestId(`city-option-${CITIES[1].id}`))
     await user.selectOptions(screen.getByTestId('radius-select'), '25')
     await user.click(screen.getByTestId('modal-apply'))
 
     // 2. Assert header shows "± 25 mi"
-    const label = screen.getByTestId('header-location-trigger')
+    const label = screen.getByTestId('left-rail-location-button')
     expect(label).toHaveTextContent('± 25 mi')
 
     // 3. Type search query, then clear search
@@ -466,7 +467,7 @@ describe('Sprint 6 — suffix survives search clear and resets correctly', () =>
     expect(label).toHaveTextContent('± 25 mi')
 
     // 5. Open modal, click Reset, Apply
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     await user.click(screen.getByTestId('radius-reset'))
     await user.click(screen.getByTestId('modal-apply'))
 
@@ -489,7 +490,7 @@ describe('Sprint 6 — header overflow behavior via measureText injection', () =
     render(<HomePage measureTextOverride={narrowMeasure} />)
 
     // Select all 3 cities: SF, Boston, NYC (in CITIES order)
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     for (const city of CITIES) {
       await user.click(screen.getByTestId(`city-option-${city.id}`))
     }
@@ -497,7 +498,7 @@ describe('Sprint 6 — header overflow behavior via measureText injection', () =
 
     // With all 3 selected and narrow measure, overflow fallback fires.
     // CITIES[0] is San Francisco.
-    const label = screen.getByTestId('header-location-trigger')
+    const label = screen.getByTestId('left-rail-location-button')
     expect(label).toHaveTextContent('San Francisco, 2 more')
   })
 
@@ -505,14 +506,14 @@ describe('Sprint 6 — header overflow behavior via measureText injection', () =
     const user = userEvent.setup()
     render(<HomePage measureTextOverride={narrowMeasure} />)
 
-    await user.click(screen.getByTestId('header-location-trigger'))
+    await user.click(screen.getByTestId('left-rail-location-button'))
     for (const city of CITIES) {
       await user.click(screen.getByTestId(`city-option-${city.id}`))
     }
     await user.selectOptions(screen.getByTestId('radius-select'), '25')
     await user.click(screen.getByTestId('modal-apply'))
 
-    const label = screen.getByTestId('header-location-trigger')
+    const label = screen.getByTestId('left-rail-location-button')
     expect(label).toHaveTextContent('San Francisco, 2 more ± 25 mi')
   })
 })

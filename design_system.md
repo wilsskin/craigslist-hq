@@ -33,11 +33,17 @@ Brand and interaction colors:
 - `color.link.default`: `#0020E5` (Craigslist blue)
 - `color.link.visited`: `#800080` (Craigslist purple, also logo purple)
 - `color.logo.purple`: `#800080` (logo only)
+Additional colors:
+- `#D0D0D0`: Lighter border color used for search input and button hover borders (between default and emphasis).
+- `#FAFAFA`: Very light background used for search input (lighter than subtle background).
+
 Usage rules:
 - Page background is always white.
 - Cards have no default fill.
 - Subtle background blocks use `#EEEEEE` sparingly.
-- Default borders are `#EEEEEE`. Emphasis borders are `#727272` only for search inputs.
+- Default borders are `#EEEEEE`. 
+- Search input and button hover borders use `#D0D0D0` (lighter than emphasis border `#727272`).
+- Emphasis borders (`#727272`) are used sparingly, only where explicitly needed.
 - No drop shadows unless extremely subtle and necessary. Default is none.
 ### Typography
 Font families:
@@ -50,12 +56,12 @@ Desktop type scale:
 - `type.h2`: 24px, line height 1.25, weight 700, color primary
 - `type.h3`: 18px, line height 1.3, weight 700, color primary, font Open Sans
 - `type.body`: 16px, line height 1.5, weight 400, color secondary
-- `type.note`: 13px, line height 1.4, weight 400, color secondary
+- `type.note`: 12px, line height 1.4, weight 400, color secondary
 Mobile scale (450px and below):
 - `type.h1`: 28px
 - `type.h2`: 20px
 - `type.h3`: 16px
-- Body stays readable, do not go below 13px for any body like text.
+- Body stays readable, do not go below 12px for any body like text.
 ### Spacing
 Base grid:
 - Use an 8px spacing system.
@@ -67,10 +73,13 @@ Rhythm rules:
 - Major section separation: 40px.
 ### Layout
 - Full width layout.
-- Left aligned content.
+- Header border extends full page width (edge-to-edge).
+- Header content has 24px horizontal padding (px-6).
+- Main content container: left aligned content with 24px horizontal padding (px-6).
+- Left rail: fixed 240px width, 24px right padding, sticky positioning with top offset 77px (header height).
 - Horizontal padding:
-- Desktop: 24px
-- Mobile: 16px
+  - Desktop: 24px
+  - Mobile: 16px
 ### Radius
 - `radius.input`: 4px
 - `radius.card`: 8px
@@ -102,34 +111,59 @@ Usage:
 required by the platform, but do not introduce a prominent ring design language.
 ### Hover and pressed states
 Buttons:
-- Hover uses a black overlay at 20 percent while preserving readability and contrast.
+- Outline buttons: Hover background becomes `#EEEEEE` (color.bg.subtle), border becomes `#D0D0D0`.
+- Primary buttons: Hover uses a black overlay at 20 percent while preserving readability and contrast.
 - Pressed state can be slightly stronger than hover.
+- All hover transitions use fast duration (100ms) with primary easing.
+
 Cards:
 - Default has no fill.
 - On hover, background fill becomes `#EEEEEE`.
+
+Category grid:
+- Responsive grid layout: repeat(auto-fit, minmax(72px, max-content))
+- Maximum 8 columns per row (max-width: 744px)
+- Wraps to fewer columns on smaller screens
+- Gap: 24px between cards
 ## Components
 ### Search Input
 Purpose:
 Primary functional element on homepage.
 Specs:
 - Height: minimum 44px.
-- Border: 1px `#727272` emphasis border.
-- Radius: 4px.
+- Max-width: 400px, width: 100% (centered in header).
+- Border: 1px solid `#D0D0D0` (lighter than emphasis border).
+- Radius: 8px (radius.button, matches button styling).
+- Background: `#FAFAFA` (very light gray, slightly lighter than page background).
 - Text: Open Sans 16px.
-- Icon: magnifying glass, left aligned inside the field, color `#727272`.
-- No search icon button. The icon is inside the input.
+- Placeholder: "Search anything" (capitalized).
+- Icon: magnifying glass (20px), left aligned inside the field, color `#727272`.
+- Clear button: X icon (18px) appears when query is non-empty, right-aligned.
+- Icon and text are vertically centered.
 ### Buttons
-Primary button:
+Primary button (not currently used in header):
 - Fill: `#0020E5`
 - Text: white
 - Radius: 8px
 - Hover: black overlay at 20 percent
-Secondary button:
-- Fill: white
-- Border: 1px `#191919`
-- Text: `#191919`
+
+Secondary/Outline button (used for "create post"):
+- Background: transparent
+- Border: 1px solid `#EEEEEE` (color.border.default)
+- Text: `#191919` (color.text.primary), lowercase
 - Radius: 8px
-- Hover: black overlay at 20 percent
+- Height: 36px (h-9)
+- Icon and text vertically centered
+- Hover: background `#EEEEEE` (color.bg.subtle), border `#D0D0D0`
+- Transition: background-color and border-color with fast duration and primary easing
+
+Icon buttons (Star, SquareUser in header):
+- Size: 20px icons
+- Color: `#191919` (color.text.primary)
+- Hover: circular background `#EEEEEE` (color.bg.subtle)
+- Circle size: 36px × 36px (matches button height)
+- Circle is absolutely positioned, doesn't affect spacing
+- Transition: opacity with fast duration and primary easing
 ### Chips
 - Outline chips with subtle fill on hover.
 - Radius: 16px
@@ -142,11 +176,58 @@ Secondary button:
 - Padding: 12px default, 16px for larger card sections
 - Hover: fill `#EEEEEE`
 - If a card is clickable, ensure hover indicates clickability.
+
+### Left Rail
+Location trigger button:
+- Font: Open Sans 16px, weight 400 (normal)
+- Icon: MapPin (20px) with 4px gap to text
+- Height: 36px (with py-2 padding)
+- Hover: background `#EEEEEE` (color.bg.subtle)
+- Bottom margin: 12px (mb-3)
+- Line-height: 1.5
+
+Category buttons:
+- Font: Open Sans 16px, weight 700 (bold)
+- Height: 36px (with py-2 padding) - matches location button
+- Hover: background `#EEEEEE` (color.bg.subtle)
+- Always enabled, even during search
+- Clicking clears search and scrolls to section
+- No spacing between "categories" label and first button (mb-0)
+
+Categories label:
+- Font: Open Sans 12px, weight 700 (semibold)
+- Color: `#727272` (color.text.secondary)
+- Bottom margin: 0px (no gap before category list)
+### Left Rail
+Location trigger button:
+- Font: Open Sans 16px, weight 400 (normal)
+- Icon: MapPin (20px) with 4px gap to text
+- Height: 36px (with py-2 padding)
+- Hover: background `#EEEEEE` (color.bg.subtle)
+- Bottom margin: 12px (mb-3)
+- Line-height: 1.5
+
+Category buttons:
+- Font: Open Sans 16px, weight 700 (bold)
+- Height: 36px (with py-2 padding) - matches location button
+- Hover: background `#EEEEEE` (color.bg.subtle)
+- Always enabled, even during search
+- Clicking clears search and scrolls to section
+- No spacing between "categories" label and first button (mb-0)
+
+Categories label:
+- Font: Open Sans 12px, weight 700 (semibold)
+- Color: `#727272` (color.text.secondary)
+- Bottom margin: 0px (no gap before category list)
+
 ### Icons
-- Use lucide icons.
+- Use lucide-react icons.
 - Default size: 20px.
-- Default color: `#727272`.
+- Default color: `#727272` (color.icon.default) for secondary icons.
+- Primary icons (header actions): `#191919` (color.text.primary).
+- Account icon: SquareUser (more square-shaped than User icon).
 - Active state may use `#0020E5` sparingly.
+- Icons are vertically centered with text when used in buttons.
 ## Do and Do Not
 Do:
 - Keep homepage structure recognizable.

@@ -37,13 +37,15 @@ export function TaxonomySectionBlock({ section }: TaxonomySectionBlockProps) {
       </h2>
 
       <div
-        className="grid gap-2"
+        className="grid justify-items-start"
         style={{
-          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(72px, max-content))',
+          gap: '24px',
+          maxWidth: '744px',
         }}
       >
         {section.items.map((item) => (
-          <SubcategoryCard key={item.id} item={item} />
+          <SubcategoryCard key={item.id} item={item} sectionId={section.id} />
         ))}
       </div>
     </section>

@@ -1,147 +1,109 @@
 import { leftRailCategories } from '@/data/taxonomy'
-import { SquarePen, CalendarDays } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 
 /**
  * Left rail: fixed 240px width, 24px L/R padding, 16px top padding.
- *
- * Content order per spec:
- * 1. Post an ad button (primary, full width, SquarePen icon)
- * 2. Event calendar button (secondary, full width, CalendarDays icon)
- * 3. Categories list (driven by left_rail_categories from taxonomy JSON)
- *
- * Sprint 3: categories are clickable buttons that scroll to the matching section.
- * Sprint 5: categories are disabled while a search query is active.
+ * Sticky so it stays visible when scrolling. Content: Select location (primary button), then category list.
  */
 
 interface LeftRailShellProps {
-  /** When true, category buttons are disabled and a hint is shown. */
-  isSearchActive?: boolean
+  /** Label for the location button (e.g. "select location" or "San Francisco, Boston"). */
+  locationLabel: string
+  /** Opens the location modal. */
+  onLocationTriggerClick: () => void
+  /** Callback when a category is clicked - clears search and scrolls to section. */
+  onCategoryClick: (sectionId: string) => void
 }
 
-function scrollToSection(sectionId: string) {
-  const el = document.getElementById(sectionId)
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-}
-
-export function LeftRailShell({ isSearchActive = false }: LeftRailShellProps) {
+export function LeftRailShell({
+  locationLabel,
+  onLocationTriggerClick,
+  onCategoryClick,
+}: LeftRailShellProps) {
   return (
     <aside
       data-testid="left-rail-shell"
-      className="shrink-0"
+      className="shrink-0 self-start"
       style={{
         width: '240px',
         paddingRight: '24px',
-        paddingTop: '16px',
+        paddingLeft: '0px',
+        position: 'sticky',
+        top: '77px',
+        backgroundColor: 'var(--color-bg-page)',
       }}
     >
-      {/* Post an ad — primary button per design system */}
+      {/* Fixed spacer to maintain top padding regardless of scroll */}
+      <div style={{ height: '16px', flexShrink: 0 }} aria-hidden="true" />
+      {/* Select location — normal weight, black by default; hover: gray background */}
       <button
-        data-testid="left-rail-post-button"
-        className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-white cursor-pointer transition-colors"
+        data-testid="left-rail-location-button"
+        type="button"
+        className="flex items-center w-full text-left border-none transition-colors rounded-lg py-2 px-2 -mx-2 mb-3 min-w-0 cursor-pointer"
         style={{
-          backgroundColor: 'var(--color-link-default)',
-          borderRadius: 'var(--radius-button)',
-          border: 'none',
-          fontFamily: '"Open Sans", sans-serif',
-          transitionDuration: 'var(--duration-fast)',
-          transitionTimingFunction: 'var(--ease-primary)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.filter = 'brightness(0.8)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.filter = 'none'
-        }}
-        onClick={() => console.log('[left-rail] Post an ad clicked')}
-      >
-        <span data-testid="post-ad-icon" className="flex items-center">
-          <SquarePen size={16} />
-        </span>
-        post an ad
-      </button>
-
-      {/* Event calendar — secondary button per design system */}
-      <button
-        data-testid="left-rail-calendar-button"
-        className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold cursor-pointer transition-colors mt-2"
-        style={{
-          backgroundColor: '#FFFFFF',
-          border: '1px solid var(--color-text-primary)',
-          borderRadius: 'var(--radius-button)',
+          gap: '4px',
+          fontSize: '16px',
+          fontWeight: 400,
           color: 'var(--color-text-primary)',
           fontFamily: '"Open Sans", sans-serif',
           transitionDuration: 'var(--duration-fast)',
           transitionTimingFunction: 'var(--ease-primary)',
+          backgroundColor: 'transparent',
+          lineHeight: '1.5',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.filter = 'brightness(0.8)'
+          e.currentTarget.style.backgroundColor = 'var(--color-bg-subtle)'
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.filter = 'none'
+          e.currentTarget.style.backgroundColor = 'transparent'
         }}
-        onClick={() => console.log('[left-rail] Event calendar clicked')}
+        onClick={onLocationTriggerClick}
       >
-        <span data-testid="event-calendar-icon" className="flex items-center">
-          <CalendarDays size={16} />
+        <span className="shrink-0 flex items-center" style={{ color: 'inherit' }}>
+          <MapPin size={20} style={{ color: 'currentColor' }} />
         </span>
-        event calendar
+        <span className="truncate leading-none" style={{ maxWidth: '192px' }}>
+          {locationLabel}
+        </span>
       </button>
 
       {/* Categories list — driven by taxonomy JSON left_rail_categories */}
-      <div className="mt-6">
+      <div className="mt-2">
         <p
-          className="text-sm font-semibold mb-2"
+          className="text-sm font-semibold mb-1"
           style={{ color: 'var(--color-text-secondary)' }}
         >
           categories
         </p>
 
-        {isSearchActive && (
-          <p
-            data-testid="categories-search-hint"
-            className="text-xs mb-2"
-            style={{
-              color: 'var(--color-text-secondary)',
-              fontFamily: '"Open Sans", sans-serif',
-            }}
-          >
-            Clear search to browse categories
-          </p>
-        )}
-
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0">
           {leftRailCategories.map((cat) => (
             <button
               key={cat.id}
               type="button"
               data-testid={`category-link-${cat.section_id}`}
-              disabled={isSearchActive}
-              aria-disabled={isSearchActive}
-              className="py-1 text-sm text-left bg-transparent border-none transition-colors p-0"
+              className="flex items-center w-full text-left border-none transition-colors rounded-lg py-2 px-2 -mx-2"
               style={{
-                color: isSearchActive
-                  ? 'var(--color-text-secondary)'
-                  : 'var(--color-link-default)',
+                fontSize: '16px',
+                fontWeight: 700,
+                color: 'var(--color-text-primary)',
                 fontFamily: '"Open Sans", sans-serif',
                 transitionDuration: 'var(--duration-fast)',
                 transitionTimingFunction: 'var(--ease-primary)',
-                cursor: isSearchActive ? 'default' : 'pointer',
-                opacity: isSearchActive ? 0.5 : 1,
+                cursor: 'pointer',
+                backgroundColor: 'transparent',
               }}
               onMouseEnter={(e) => {
-                if (!isSearchActive)
-                  e.currentTarget.style.textDecoration = 'underline'
+                e.currentTarget.style.backgroundColor = 'var(--color-bg-subtle)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.textDecoration = 'none'
+                e.currentTarget.style.backgroundColor = 'transparent'
               }}
               onClick={() => {
-                if (!isSearchActive) scrollToSection(cat.section_id)
+                onCategoryClick(cat.section_id)
               }}
             >
-              {cat.label}
+              <span className="min-w-0 truncate">{cat.label}</span>
             </button>
           ))}
         </div>

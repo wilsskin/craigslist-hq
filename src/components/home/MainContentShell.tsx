@@ -25,21 +25,11 @@ export function MainContentShell({
   const isSearching = matchCount !== -1
 
   return (
-    <main data-testid="main-content-shell" className="flex-1 min-w-0 pt-4">
-      {/* Result count when searching */}
-      {isSearching && matchCount > 0 && (
-        <p
-          data-testid="search-result-count"
-          className="text-sm mb-4"
-          style={{
-            color: 'var(--color-text-secondary)',
-            fontFamily: '"Open Sans", sans-serif',
-          }}
-        >
-          Results: {matchCount}
-        </p>
-      )}
-
+    <main
+      data-testid="main-content-shell"
+      className="flex-1 min-w-0 pt-4"
+      style={{ paddingBottom: '64px' }}
+    >
       {/* Empty state */}
       {isSearching && matchCount === 0 && (
         <div

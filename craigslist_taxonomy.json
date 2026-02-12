@@ -228,7 +228,17 @@
         "id": "resumes",
         "title": "resumes",
         "items": [
-          { "id": "resumes_post_resume", "label": "post resume" }
+          { "id": "resumes_examples", "label": "examples" },
+          { "id": "resumes_help", "label": "help" }
+        ]
+      },
+      {
+        "id": "events",
+        "title": "events",
+        "items": [
+          { "id": "events_outdoors", "label": "outdoors" },
+          { "id": "events_music", "label": "music" },
+          { "id": "events_gatherings", "label": "gatherings" }
         ]
       }
     ],
@@ -240,7 +250,8 @@
       { "id": "nav_for_sale", "label": "for sale", "section_id": "for_sale" },
       { "id": "nav_jobs", "label": "jobs", "section_id": "jobs" },
       { "id": "nav_gigs", "label": "gigs", "section_id": "gigs" },
-      { "id": "nav_resumes", "label": "resumes", "section_id": "resumes" }
+      { "id": "nav_resumes", "label": "resumes", "section_id": "resumes" },
+      { "id": "nav_events", "label": "events", "section_id": "events" }
     ],
     "meta": {
       "notes": [
