@@ -68,9 +68,34 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            className="relative flex cursor-pointer items-center justify-center border-none p-0"
+            style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              color: 'var(--color-text-primary)',
+              backgroundColor: 'transparent',
+              zIndex: 10,
+            }}
+            onMouseEnter={(e) => {
+              const circle = e.currentTarget.querySelector('.hover-circle') as HTMLElement
+              if (circle) circle.style.opacity = '1'
+            }}
+            onMouseLeave={(e) => {
+              const circle = e.currentTarget.querySelector('.hover-circle') as HTMLElement
+              if (circle) circle.style.opacity = '0'
+            }}
           >
-            <XIcon />
+            <span
+              className="hover-circle absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                backgroundColor: 'var(--color-bg-subtle)',
+                opacity: 0,
+                transition: 'opacity var(--duration-fast) var(--ease-primary)',
+                pointerEvents: 'none',
+              }}
+            />
+            <XIcon size={20} className="relative z-10" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}
