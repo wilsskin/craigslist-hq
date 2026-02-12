@@ -41,8 +41,8 @@ export function TaxonomySectionBlock({ section }: TaxonomySectionBlockProps) {
         className="grid justify-items-start"
         style={{
           gridTemplateColumns: 'repeat(auto-fit, minmax(72px, max-content))',
-          gap: '16px 8px', // row-gap column-gap: 16px vertical, 8px horizontal
-          maxWidth: '744px',
+          gap: '8px 8px', // row-gap column-gap: 16px vertical, 8px horizontal
+          maxWidth: '800px',
         }}
       >
         {section.items.map((item) => (
