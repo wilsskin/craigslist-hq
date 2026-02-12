@@ -7,7 +7,7 @@ import {
 } from '@/lib/locationLabel'
 import { DEFAULT_RADIUS_MILES } from '@/data/constants'
 import { taxonomySections } from '@/data/taxonomy'
-import { filterSectionsByQuery, normalizeQuery } from '@/lib/searchTaxonomy'
+import { filterSectionsByQuery } from '@/lib/searchTaxonomy'
 import { HeaderShell } from './HeaderShell'
 import { LeftRailShell } from './LeftRailShell'
 import { MainContentShell } from './MainContentShell'
@@ -46,8 +46,6 @@ export function HomePage({ measureTextOverride }: HomePageProps = {}) {
     () => filterSectionsByQuery(taxonomySections, headerSearchQuery),
     [headerSearchQuery],
   )
-
-  const isSearchActive = normalizeQuery(headerSearchQuery) !== ''
 
   const clearSearch = () => setHeaderSearchQuery('')
 
