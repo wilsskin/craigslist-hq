@@ -115,7 +115,7 @@ export function HeaderShell({
                 'background-color var(--duration-fast) var(--ease-primary), border-color var(--duration-fast) var(--ease-primary)',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#D0D0D0'
+              e.currentTarget.style.borderColor = '#D6D6D6' // 10% darker than default border (#EEEEEE)
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = 'var(--color-border-default)'
@@ -123,7 +123,7 @@ export function HeaderShell({
             onClick={() => console.log('[header] Post an ad clicked')}
           >
             <SquarePen style={{ lineHeight: 1 }} />
-            <span style={{ lineHeight: 1 }}>create post</span>
+            <span style={{ lineHeight: 1 }}>create ad</span>
           </Button>
           <button
             type="button"
